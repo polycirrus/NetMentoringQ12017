@@ -11,22 +11,11 @@ namespace ClassMapper
         public static Mapper<TSource, TDestination> Generate<TSource, TDestination>()
             where TDestination : new()
         {
-            var sourceProperties = typeof(TSource).GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .Where(propInfo => propInfo.CanRead);
-            var destinationProperties = typeof(TDestination).GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .Where(propInfo => propInfo.CanWrite).ToList();
-            var propertyMappings = new Dictionary<PropertyInfo, PropertyInfo>();
-            foreach (var sourceProperty in sourceProperties)
-            {
-                var mappedProperty = destinationProperties.FirstOrDefault(destProp => destProp.Name == sourceProperty.Name &&
-                    destProp.PropertyType.IsAssignableFrom(sourceProperty.PropertyType));
-                if (mappedProperty != null)
-                    propertyMappings.Add(sourceProperty, mappedProperty);
-            }
+            var propertyMappings = CreatePropertyMappings<TSource, TDestination>();
 
             Expression<Action<TSource, TDestination>> copyingLambda = (source, destination) =>
                 propertyMappings.ForEach(x => x.Value.SetValue(destination, x.Key.GetValue(source)));
-
+            
             var sourceParam = Expression.Parameter(typeof(TSource));
             var destinationParam = Expression.Parameter(typeof(TDestination));
             var creationExpression = Expression.Assign(destinationParam, Expression.New(typeof(TDestination))); // destination = new TDestination()
@@ -42,6 +31,26 @@ namespace ClassMapper
 
             var mapFunction = Expression.Lambda<Func<TSource, TDestination>>(mapFunctionBody, sourceParam);
             return new Mapper<TSource, TDestination>(mapFunction.Compile());
+        }
+
+        private static Dictionary<PropertyInfo, PropertyInfo> CreatePropertyMappings<TSource, TDestination>() where TDestination : new()
+        {
+            var sourceProperties = typeof (TSource).GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Where(propInfo => propInfo.CanRead);
+            var destinationProperties = typeof (TDestination).GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Where(propInfo => propInfo.CanWrite).ToList();
+
+            var propertyMappings = new Dictionary<PropertyInfo, PropertyInfo>();
+            foreach (var sourceProperty in sourceProperties)
+            {
+                var mappedProperty = destinationProperties.FirstOrDefault(destProp => destProp.Name == sourceProperty.Name &&
+                    destProp.PropertyType.IsAssignableFrom(sourceProperty.PropertyType));
+
+                if (mappedProperty != null)
+                    propertyMappings.Add(sourceProperty, mappedProperty);
+            }
+
+            return propertyMappings;
         }
     }
 }

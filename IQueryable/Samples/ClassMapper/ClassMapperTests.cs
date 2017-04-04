@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,6 +17,7 @@ namespace ClassMapper
             public int MappedProperty1 { get; set; }
             public int MappedProperty2 { get; set; }
             public int MappedProperty3 { get; set; }
+            public string MappedProperty4 { get; set; }
 
             public int UnmappedProperty1 { get; set; }
             public int UnmappedProperty2 { get; set; }
@@ -23,9 +25,10 @@ namespace ClassMapper
 
         private class Destination
         {
-            public int MappedProperty1 { get; set; }
-            public int MappedProperty2 { get; set; }
-            public int MappedProperty3 { get; set; }
+            public object MappedProperty1 { get; set; }
+            public string MappedProperty2 { get; set; }
+            public double MappedProperty3 { get; set; }
+            public int MappedProperty4 { get; set; }
 
             public int UnmappedProperty3 { get; set; }
             public int UnmappedProperty4 { get; set; }
@@ -39,6 +42,7 @@ namespace ClassMapper
                 MappedProperty1 = 1,
                 MappedProperty2 = 2,
                 MappedProperty3 = 3,
+                MappedProperty4 = "4",
                 UnmappedProperty1 = 4,
                 UnmappedProperty2 = 5
             };
@@ -47,8 +51,9 @@ namespace ClassMapper
             var destination = mapper.Map(source);
 
             Assert.AreEqual(source.MappedProperty1, destination.MappedProperty1);
-            Assert.AreEqual(source.MappedProperty2, destination.MappedProperty2);
-            Assert.AreEqual(source.MappedProperty3, destination.MappedProperty3);
+            Assert.AreEqual(null, destination.MappedProperty2);
+            Assert.AreEqual(0, destination.MappedProperty3);
+            Assert.AreEqual(0, destination.MappedProperty4);
             Assert.AreEqual(default(int), destination.UnmappedProperty3);
             Assert.AreEqual(default(int), destination.UnmappedProperty4);
         }
