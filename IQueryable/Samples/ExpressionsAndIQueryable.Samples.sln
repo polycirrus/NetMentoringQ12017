@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample02_DSL", "Sample02_DS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample02_DLR", "Sample02_DLR\Sample02_DLR.csproj", "{412AEB53-161C-4594-A055-ABEBE60A199A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassMapper", "ClassMapper\ClassMapper.csproj", "{B18638D9-33E3-472E-BD2C-F3FA9CBD0C6F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{412AEB53-161C-4594-A055-ABEBE60A199A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{412AEB53-161C-4594-A055-ABEBE60A199A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{412AEB53-161C-4594-A055-ABEBE60A199A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B18638D9-33E3-472E-BD2C-F3FA9CBD0C6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B18638D9-33E3-472E-BD2C-F3FA9CBD0C6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B18638D9-33E3-472E-BD2C-F3FA9CBD0C6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B18638D9-33E3-472E-BD2C-F3FA9CBD0C6F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
