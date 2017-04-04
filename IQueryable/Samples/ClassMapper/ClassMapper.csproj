@@ -51,6 +51,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="ClassMapperTests.cs" />
+    <Compile Include="ForEachLinqExtension.cs" />
     <Compile Include="Mapper.cs" />
     <Compile Include="MappingGenerator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
