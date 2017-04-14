@@ -1,7 +1,13 @@
 ﻿<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>
+          Stocks by genre
+        </title>
+  </head>
   <body>
     <h3>4/14/2017</h3>
-    <table>
+    <table border="1">
       <tr>
         <th>Author</th>
         <th>Title</th>
@@ -35,7 +41,7 @@
     </table>
     <div>
             Total of Computer: 4</div>
-    <table>
+    <table border="1">
       <tr>
         <th>Author</th>
         <th>Title</th>
@@ -69,7 +75,7 @@
     </table>
     <div>
             Total of Fantasy: 4</div>
-    <table>
+    <table border="1">
       <tr>
         <th>Author</th>
         <th>Title</th>
@@ -85,7 +91,7 @@
     </table>
     <div>
             Total of Horror: 1</div>
-    <table>
+    <table border="1">
       <tr>
         <th>Author</th>
         <th>Title</th>
@@ -107,7 +113,7 @@
     </table>
     <div>
             Total of Romance: 2</div>
-    <table>
+    <table border="1">
       <tr>
         <th>Author</th>
         <th>Title</th>

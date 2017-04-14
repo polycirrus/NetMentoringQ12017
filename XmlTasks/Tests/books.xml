@@ -2,7 +2,7 @@
 <catalog xmlns="http://library.by/catalog">
   <book id="bk101">
     <isbn>0-596-00103-7</isbn>
-    <author>Löwy, Juval</author>
+    <author q="3">Löwy, Juval</author>
     <title>COM and .NET Component Services</title>
     <genre>Computer</genre>
     <publisher>O'Reilly</publisher>
@@ -68,6 +68,7 @@
     <registration_date>2016-01-05</registration_date>
   </book>
   <book id="bk106">
+    <isbn>0-596-00203-7</isbn>
     <author>Randall, Cynthia</author>
     <title>Lover Birds</title>
     <genre>Romance</genre>

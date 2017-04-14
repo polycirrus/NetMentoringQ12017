@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:lib="http://library.by/catalog">
+<rss version="2.0">
   <channel>
-  <item><author>Löwy, Juval</author><title>COM and .NET Component Services</title><category>Computer</category><description>
+  <item><link>http://my.safaribooksonline.com/0-596-00103-7/</link><author>Löwy, Juval</author><title>COM and .NET Component Services</title><category>Computer</category><description>
       COM &amp; .NET Component Services provides both traditional COM programmers and new .NET
       component developers with the information they need to begin developing applications that take full advantage of COM+ services.
       This book focuses on COM+ services, including support for transactions, queued components, events, concurrency management, and security
@@ -27,7 +27,7 @@
       battle one another for control of England. Sequel to
       Oberon's Legacy.
     </description><pubDate>2016-01-05</pubDate></item>
-  <item><author>Randall, Cynthia</author><title>Lover Birds</title><category>Romance</category><description>
+  <item><isbn>0-596-00203-7</isbn><author>Randall, Cynthia</author><title>Lover Birds</title><category>Romance</category><description>
       When Carla meets Paul at an ornithology
       conference, tempers fly as feathers get ruffled.
     </description><pubDate>2016-01-05</pubDate></item>

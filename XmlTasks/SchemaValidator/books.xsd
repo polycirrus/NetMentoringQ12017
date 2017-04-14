@@ -16,16 +16,11 @@
               <xs:element name="description" type="xs:string" />
               <xs:element name="registration_date" type="xs:date" />
             </xs:sequence>
-            <xs:attribute name="id" type="xs:string" use="required" />
+            <xs:attribute name="id" type="xs:ID" use="required" />
           </xs:complexType>
         </xs:element>
       </xs:sequence>
     </xs:complexType>
-
-    <xs:key name="bookId">
-      <xs:selector xpath="lib:book" />
-      <xs:field xpath="@id" />
-    </xs:key>
   </xs:element>
 
   <xs:simpleType name="isbnString">

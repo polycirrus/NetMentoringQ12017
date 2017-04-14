@@ -15,6 +15,11 @@
   <xsl:key name="books-by-genre" match="lib:book" use="lib:genre"/>
   <xsl:template match="lib:catalog">
     <html>
+      <head>
+        <title>
+          Stocks by genre
+        </title>
+      </head>
       <body>
 
         <h3>
