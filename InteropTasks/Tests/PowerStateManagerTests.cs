@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using PowerStateManager;
 
 namespace Tests
 {
@@ -48,6 +47,18 @@ namespace Tests
         public void RemoveHibernationFile()
         {
             PowerStateManager.PowerStateManager.RemoveHibernationFile();
+        }
+
+        [TestMethod]
+        public void Hibernate()
+        {
+            PowerStateManager.PowerStateManager.Hibernate();
+        }
+
+        [TestMethod]
+        public void Suspend()
+        {
+            PowerStateManager.PowerStateManager.Suspend();
         }
     }
 }
