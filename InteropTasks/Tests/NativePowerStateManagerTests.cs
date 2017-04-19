@@ -1,27 +1,28 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PowerStateManagement;
 
 namespace Tests
 {
     [TestClass]
-    public class PowerStateManagerTests
+    public class NativePowerStateManagerTests
     {
         [TestMethod]
         public void GetLastSleepTime()
         {
-            Console.WriteLine(PowerStateManager.PowerStateManager.GetLastSleepTime());
+            Console.WriteLine(NativePowerStateManager.GetLastSleepTime());
         }
 
         [TestMethod]
         public void GetLastWakeTime()
         {
-            Console.WriteLine(PowerStateManager.PowerStateManager.GetLastWakeTime());
+            Console.WriteLine(NativePowerStateManager.GetLastWakeTime());
         }
 
         [TestMethod]
         public void GetBatteryState()
         {
-            var state = PowerStateManager.PowerStateManager.GetBatteryState();
+            var state = NativePowerStateManager.GetBatteryState();
             Console.WriteLine(state.AcOnLine);
             Console.WriteLine(state.BatteryPresent);
             Console.WriteLine(state.RemainingCapacity);
@@ -30,7 +31,7 @@ namespace Tests
         [TestMethod]
         public void GetPowerInformation()
         {
-            var info = PowerStateManager.PowerStateManager.GetPowerInformation();
+            var info = NativePowerStateManager.GetPowerInformation();
             Console.WriteLine(info.CoolingMode);
             Console.WriteLine(info.Idleness);
             Console.WriteLine(info.MaxIdlenessAllowed);
@@ -40,25 +41,25 @@ namespace Tests
         [TestMethod]
         public void ReserveHibernationFile()
         {
-            PowerStateManager.PowerStateManager.ReserveHibernationFile();
+            NativePowerStateManager.ReserveHibernationFile();
         }
 
         [TestMethod]
         public void RemoveHibernationFile()
         {
-            PowerStateManager.PowerStateManager.RemoveHibernationFile();
+            NativePowerStateManager.RemoveHibernationFile();
         }
 
         [TestMethod]
         public void Hibernate()
         {
-            PowerStateManager.PowerStateManager.Hibernate();
+            NativePowerStateManager.Hibernate();
         }
 
         [TestMethod]
         public void Suspend()
         {
-            PowerStateManager.PowerStateManager.Suspend();
+            NativePowerStateManager.Suspend();
         }
     }
 }

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerStateManager", "PowerStateManager\PowerStateManager.csproj", "{96900DC2-8561-470D-8D4D-EB99AEA39BE4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerStateManagement", "PowerStateManager\PowerStateManagement.csproj", "{96900DC2-8561-470D-8D4D-EB99AEA39BE4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{401D72C4-7785-451F-BAE4-69A55A1DED03}"
 EndProject

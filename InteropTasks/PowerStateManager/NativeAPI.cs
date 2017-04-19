@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace PowerStateManager
+namespace PowerStateManagement
 {
     internal static class NativeAPI
     {

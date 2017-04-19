@@ -50,14 +50,17 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="PowerStateManagerTests.cs" />
+    <Compile Include="NativePowerStateManagerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PowerStateManager\PowerStateManager.csproj">
+    <ProjectReference Include="..\PowerStateManager\PowerStateManagement.csproj">
       <Project>{96900dc2-8561-470d-8d4d-eb99aea39be4}</Project>
-      <Name>PowerStateManager</Name>
+      <Name>PowerStateManagement</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="test.vbs" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
