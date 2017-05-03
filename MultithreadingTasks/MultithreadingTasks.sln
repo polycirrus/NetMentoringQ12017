@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastru
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatClient", "ChatClient\ChatClient.csproj", "{4797E376-3748-41A4-BF9A-F2EAC8BD50AB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SynchronousServer", "SynchronousServer\SynchronousServer.csproj", "{424B2EA4-86A1-4A40-990B-2A46BC494271}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SynchronousClient", "SynchronousClient\SynchronousClient.csproj", "{5F8736DB-F354-4C9B-94DE-9BA4D0771C0E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{4797E376-3748-41A4-BF9A-F2EAC8BD50AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4797E376-3748-41A4-BF9A-F2EAC8BD50AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4797E376-3748-41A4-BF9A-F2EAC8BD50AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{424B2EA4-86A1-4A40-990B-2A46BC494271}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{424B2EA4-86A1-4A40-990B-2A46BC494271}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{424B2EA4-86A1-4A40-990B-2A46BC494271}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{424B2EA4-86A1-4A40-990B-2A46BC494271}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F8736DB-F354-4C9B-94DE-9BA4D0771C0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F8736DB-F354-4C9B-94DE-9BA4D0771C0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F8736DB-F354-4C9B-94DE-9BA4D0771C0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F8736DB-F354-4C9B-94DE-9BA4D0771C0E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

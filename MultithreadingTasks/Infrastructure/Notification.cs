@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 namespace Infrastructure
 {
     [Serializable]
-    public class Message
+    public class Notification
     {
-        public string UserId { get; set; }
         public string Text { get; set; }
     }
 }
