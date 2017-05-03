@@ -46,7 +46,7 @@ namespace SynchronousClient
 
         private void connectButton_Click(object sender, EventArgs e)
         {
-            pipeClient = new NamedPipeClientStream(".", "serverPipe", PipeDirection.InOut);
+            pipeClient = new NamedPipeClientStream(".", "serverPipe", PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
             pipeClient.Connect();
 
             var stream = new MemoryStream();

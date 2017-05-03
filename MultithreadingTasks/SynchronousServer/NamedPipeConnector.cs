@@ -35,7 +35,7 @@ namespace SynchronousServer
 
             for (int i = 0; i < ConnectionCount; i++)
             {
-                var connection = new NamedPipeServerStream(PipeName, PipeDirection.InOut, ConnectionCount);
+                var connection = new NamedPipeServerStream(PipeName, PipeDirection.InOut, ConnectionCount, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
                 var listenerThread = new Thread(PipeServerThread);
                 listenerThread.Start(connection);
                 connectionThreads.Add(connection, listenerThread);
