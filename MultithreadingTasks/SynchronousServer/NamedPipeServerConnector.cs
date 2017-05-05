@@ -66,6 +66,12 @@ namespace SynchronousServer
                 Send(connection, message);
         }
 
+        public void Send(string userId, IEnumerable<Message> messages)
+        {
+            foreach (var message in messages)
+                Send(userId, message);
+        }
+
         private Task Send(NamedPipeServerStream connection, object data)
         {
             return Task.Run(() =>

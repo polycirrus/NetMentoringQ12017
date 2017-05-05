@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Infrastructure;
 
 namespace SynchronousServer
@@ -10,5 +11,6 @@ namespace SynchronousServer
 
         void Broadcast(Message message);
         void Send(string userId, Message message);
+        void Send(string userId, IEnumerable<Message> messages);
     }
 }

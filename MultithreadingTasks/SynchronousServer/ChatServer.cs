@@ -24,7 +24,7 @@ namespace SynchronousServer
 
         public ChatServer(Action<string> log)
         {
-            connectors = new IServerConnector[] {new NamedPipeServerConnector("serverPipe")/*, new SocketServerConnector()*/};
+            connectors = new IServerConnector[] { new NamedPipeServerConnector("serverPipe"), new SocketServerConnector() };
             Log = log;
         }
 
@@ -67,10 +67,7 @@ namespace SynchronousServer
                 messages = messageHistory.ToArray();
             }
 
-            foreach (var message in messages)
-            {
-                ((IServerConnector)sender).Send(e.UserId, message);
-            }
+            ((IServerConnector)sender).Send(e.UserId, messages);
         }
 
         private void OnMessageReceived(object sender, MessageReceivedEventArgs e)

@@ -15,9 +15,9 @@ namespace SynchronousServer
 {
     public class SocketServerConnector : IServerConnector
     {
-        private Socket socket;
+        private TcpListener listener;
         private CancellationTokenSource tokenSource;
-        private ConcurrentDictionary<Socket, string> clients; 
+        private ConcurrentDictionary<TcpClient, string> clients; 
 
         public event EventHandler<ConnectionEventArgs> Connected;
         public event EventHandler<ConnectionEventArgs> Disconnected;
@@ -25,7 +25,14 @@ namespace SynchronousServer
 
         public void Broadcast(Message message)
         {
-            throw new NotImplementedException();
+            Broadcast((object)message);
+        }
+
+        private void Broadcast(object data)
+        {
+            var connections = clients.Keys.ToArray();
+            var tasks = connections.Select(connection => Task.Run(() => Send(connection, data)));
+            Task.WaitAll(tasks.ToArray());
         }
 
         public void Dispose()
@@ -35,11 +42,11 @@ namespace SynchronousServer
 
         public void Init()
         {
-            socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-
             var endpoint = new IPEndPoint(IPAddress.Any, 17643);
-            socket.Bind(endpoint);
-            socket.Listen(10);
+            listener = new TcpListener(endpoint);
+            listener.Start();
+
+            clients = new ConcurrentDictionary<TcpClient, string>();
 
             tokenSource = new CancellationTokenSource();
             Task.Run(() => Listen(), tokenSource.Token);
@@ -49,32 +56,43 @@ namespace SynchronousServer
         {
             while (!tokenSource.IsCancellationRequested)
             {
-                var connection = socket.Accept();
+                var connection = listener.AcceptTcpClient();
                 Task.Run(() => ReadFromClient(connection), tokenSource.Token);
             }
             tokenSource.Token.ThrowIfCancellationRequested();
         }
 
-        private void ReadFromClient(Socket connection)
+        private async void ReadFromClient(TcpClient connection)
         {
-            using (connection)
+            try
             {
                 while (!tokenSource.IsCancellationRequested && connection.Connected)
                 {
                     var data = new byte[1024];
-                    var bytesReceived = socket.Receive(data);
+                    var bytesReceived = 0;
+                    bytesReceived += await connection.GetStream().ReadAsync(data, 0, data.Length, tokenSource.Token);
+                    while (connection.Available > 0)
+                        bytesReceived += await connection.GetStream().ReadAsync(data, bytesReceived, data.Length - bytesReceived, tokenSource.Token);
 
                     if (bytesReceived <= 0)
                         break;
 
-                    var receivedObject = new BinaryFormatter().Deserialize(new MemoryStream(data));
-                    HandleReceivedObject(socket, receivedObject);
+                    var receivedObject = new BinaryFormatter().Deserialize(new MemoryStream(data.Take(bytesReceived).ToArray()));
+                    HandleReceivedObject(connection, receivedObject);
                 }
                 tokenSource.Token.ThrowIfCancellationRequested();
             }
+            finally
+            {
+                connection.Close();
+
+                string userId;
+                if (clients.TryGetValue(connection, out userId))
+                    Disconnected?.Invoke(this, new ConnectionEventArgs() { UserId = userId });
+            }
         }
 
-        private void HandleReceivedObject(Socket connection, object receivedObject)
+        private void HandleReceivedObject(TcpClient connection, object receivedObject)
         {
             var message = receivedObject as Message;
             if (message != null)
@@ -90,12 +108,27 @@ namespace SynchronousServer
 
         public void Send(string userId, Message message)
         {
-            throw new NotImplementedException();
+            var connection = clients.Where(kvp => kvp.Value == userId).Select(kvp => kvp.Key).FirstOrDefault();
+            Send(connection, message);
+        }
+
+        public void Send(string userId, IEnumerable<Message> messages)
+        {
+            var connection = clients.Where(kvp => kvp.Value == userId).Select(kvp => kvp.Key).FirstOrDefault();
+            Send(connection, messages.ToArray());
+        }
+
+        private void Send(TcpClient connection, object data)
+        {
+            var memstr = new MemoryStream();
+            new BinaryFormatter().Serialize(memstr, data);
+            connection.GetStream().Write(memstr.ToArray(), 0, (int)memstr.Length);
         }
 
         public void Stop()
         {
-            throw new NotImplementedException();
+            Broadcast(new Notification() {Text = "The server is shutting down."});
+            tokenSource.Cancel();
         }
     }
 }
