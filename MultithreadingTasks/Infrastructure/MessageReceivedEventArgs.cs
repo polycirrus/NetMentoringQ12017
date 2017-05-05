@@ -1,7 +1,6 @@
 ﻿using System;
-using Infrastructure;
 
-namespace SynchronousServer
+namespace Infrastructure
 {
     public class MessageReceivedEventArgs : EventArgs
     {

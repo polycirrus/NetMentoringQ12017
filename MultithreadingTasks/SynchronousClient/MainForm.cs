@@ -18,9 +18,7 @@ namespace SynchronousClient
 
     public partial class MainForm : Form
     {
-        private NamedPipeClientStream pipeClient;
-        private Task listenerTask;
-        private CancellationTokenSource tokenSource;
+        private IClientConnector client;
 
         public MainForm()
         {
@@ -29,67 +27,26 @@ namespace SynchronousClient
 
         private void sendButton_Click(object sender, EventArgs e)
         {
-            if (pipeClient == null || !pipeClient.IsConnected)
-            {
-                MessageBox.Show("You must be connected to send a message", "Error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-                return;
-            }
-
-            var stream = new MemoryStream();
-            new BinaryFormatter().Serialize(stream, new Message() {UserId = userIdTextBox.Text, Text = messageTextBox.Text});
-            var data = stream.ToArray();
-
-            pipeClient.Write(data, 0, data.Length);
-            pipeClient.WaitForPipeDrain();
+            client?.Send(messageTextBox.Text);
         }
 
         private void connectButton_Click(object sender, EventArgs e)
         {
-            pipeClient = new NamedPipeClientStream(".", "serverPipe", PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
-            pipeClient.Connect();
+            if (namedPipeRadioButton.Checked)
+                client = new NamedPipeClientConnector(LogMessage);
+            if (socketRadioButton.Checked)
+                client = new SocketClientConnector(LogMessage);
 
-            var stream = new MemoryStream();
-            new BinaryFormatter().Serialize(stream, new Authentication() {UserId = userIdTextBox.Text});
-            var data = stream.ToArray();
+            client.Connected += (o, args) => LogMessage($"Connected as {args.UserId}");
+            client.Disconnected += (o, args) => LogMessage($"Disconnected as {args.UserId}");
+            client.MessageReceived += (o, args) => LogMessage($"{args.Message.UserId} says: {args.Message.Text}");
 
-            pipeClient.Write(data, 0, data.Length);
-            pipeClient.WaitForPipeDrain();
-
-            tokenSource = new CancellationTokenSource();
-            listenerTask = Task.Run(() => Listen(), tokenSource.Token);
-
-            LogMessage($"Connected as {userIdTextBox.Text}");
-        }
-
-        private void Listen()
-        {
-            while (!tokenSource.Token.IsCancellationRequested)
-            {
-                while (pipeClient.IsConnected)
-                {
-                    var receivedObject = new BinaryFormatter().Deserialize(pipeClient);
-                    HandleReceivedObject(receivedObject);
-                }
-            }
-            tokenSource.Token.ThrowIfCancellationRequested();
-        }
-
-        private void HandleReceivedObject(object receivedObject)
-        {
-            var message = receivedObject as Message;
-            if (message != null)
-                LogMessage($"{message.UserId} says: {message.Text}");
-
-            var notification = receivedObject as Notification;
-            if (notification != null)
-                LogMessage($"Server says: {notification.Text}");
+            client.Connect(userIdTextBox.Text);
         }
 
         private void disconnectButton_Click(object sender, EventArgs e)
         {
-            tokenSource.Cancel();
-            pipeClient.Dispose();
+            client?.Disconnect();
         }
 
         private void LogMessage(string message)
