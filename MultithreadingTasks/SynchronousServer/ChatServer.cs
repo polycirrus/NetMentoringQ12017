@@ -75,7 +75,7 @@ namespace SynchronousServer
 
         private void OnMessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            Log($"{e.Message.UserId} says: {e.Message}");
+            Log($"{e.Message.UserId} says: {e.Message.Text}");
 
             pendingMessages.Add(e.Message);
 
@@ -85,8 +85,8 @@ namespace SynchronousServer
                 {
                     Message oldMessage;
                     messageHistory.TryDequeue(out oldMessage);
-                    messageHistory.Enqueue(e.Message);
                 }
+                messageHistory.Enqueue(e.Message);
             }
         }
 

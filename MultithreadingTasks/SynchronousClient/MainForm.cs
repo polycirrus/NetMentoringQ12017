@@ -56,11 +56,8 @@ namespace SynchronousClient
             pipeClient.Write(data, 0, data.Length);
             pipeClient.WaitForPipeDrain();
 
-            if (listenCheckBox.Checked)
-            {
-                tokenSource = new CancellationTokenSource();
-                listenerTask = Task.Run(() => Listen(), tokenSource.Token);
-            }
+            tokenSource = new CancellationTokenSource();
+            listenerTask = Task.Run(() => Listen(), tokenSource.Token);
 
             LogMessage($"Connected as {userIdTextBox.Text}");
         }

@@ -34,7 +34,6 @@
             this.connectButton = new System.Windows.Forms.Button();
             this.userIdTextBox = new System.Windows.Forms.TextBox();
             this.disconnectButton = new System.Windows.Forms.Button();
-            this.listenCheckBox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // sendButton
@@ -60,7 +59,7 @@
             this.logTextBox.Multiline = true;
             this.logTextBox.Name = "logTextBox";
             this.logTextBox.ReadOnly = true;
-            this.logTextBox.Size = new System.Drawing.Size(260, 179);
+            this.logTextBox.Size = new System.Drawing.Size(260, 194);
             this.logTextBox.TabIndex = 2;
             // 
             // connectButton
@@ -90,22 +89,11 @@
             this.disconnectButton.UseVisualStyleBackColor = true;
             this.disconnectButton.Click += new System.EventHandler(this.disconnectButton_Click);
             // 
-            // listenCheckBox
-            // 
-            this.listenCheckBox.AutoSize = true;
-            this.listenCheckBox.Location = new System.Drawing.Point(12, 255);
-            this.listenCheckBox.Name = "listenCheckBox";
-            this.listenCheckBox.Size = new System.Drawing.Size(54, 17);
-            this.listenCheckBox.TabIndex = 6;
-            this.listenCheckBox.Text = "Listen";
-            this.listenCheckBox.UseVisualStyleBackColor = true;
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(284, 280);
-            this.Controls.Add(this.listenCheckBox);
+            this.ClientSize = new System.Drawing.Size(284, 276);
             this.Controls.Add(this.disconnectButton);
             this.Controls.Add(this.userIdTextBox);
             this.Controls.Add(this.connectButton);
@@ -130,7 +118,6 @@
         private System.Windows.Forms.Button connectButton;
         private System.Windows.Forms.TextBox userIdTextBox;
         private System.Windows.Forms.Button disconnectButton;
-        private System.Windows.Forms.CheckBox listenCheckBox;
     }
 }
 

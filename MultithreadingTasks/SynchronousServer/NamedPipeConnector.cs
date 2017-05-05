@@ -7,6 +7,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
+using System.Runtime.Serialization;
 
 namespace SynchronousServer
 {
@@ -91,7 +92,8 @@ namespace SynchronousServer
                 {
                     try
                     {
-                        pipeServer.WaitForConnection();
+                        if (!pipeServer.IsConnected)
+                            pipeServer.WaitForConnection();
 
                         while (pipeServer.IsConnected)
                         {
@@ -104,6 +106,13 @@ namespace SynchronousServer
                     catch (IOException)
                     {
                         OnDisconnect(pipeServer);
+                        continue;
+                    }
+                    catch (SerializationException)
+                    {
+                        if (!pipeServer.IsConnected)
+                            OnDisconnect(pipeServer);
+
                         continue;
                     }
                 }
