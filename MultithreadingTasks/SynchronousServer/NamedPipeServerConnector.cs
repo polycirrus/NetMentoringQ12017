@@ -11,11 +11,12 @@ using System.Runtime.Serialization;
 
 namespace SynchronousServer
 {
-    public class NamedPipeConnector : IConnector
+    public class NamedPipeServerConnector : IServerConnector
     {
         private static readonly int ConnectionCount = 2;
 
-        private Dictionary<NamedPipeServerStream, Thread> connectionThreads;
+        private CancellationTokenSource tokenSource;
+        private Dictionary<NamedPipeServerStream, Task> connectionTasks;
         private Dictionary<NamedPipeServerStream, string> userIdMappings; 
 
         public string PipeName { get; set; }
@@ -24,7 +25,7 @@ namespace SynchronousServer
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
         public event EventHandler<ConnectionEventArgs> Disconnected;
 
-        public NamedPipeConnector(string pipeName)
+        public NamedPipeServerConnector(string pipeName)
         {
             PipeName = pipeName;
         }
@@ -32,29 +33,30 @@ namespace SynchronousServer
         public void Init()
         {
             userIdMappings = new Dictionary<NamedPipeServerStream, string>();
-            connectionThreads = new Dictionary<NamedPipeServerStream, Thread>();
+            connectionTasks = new Dictionary<NamedPipeServerStream, Task>();
 
             for (int i = 0; i < ConnectionCount; i++)
             {
                 var connection = new NamedPipeServerStream(PipeName, PipeDirection.InOut, ConnectionCount, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
-                var listenerThread = new Thread(PipeServerThread);
-                listenerThread.Start(connection);
-                connectionThreads.Add(connection, listenerThread);
+
+                tokenSource = new CancellationTokenSource();
+                var task = Task.Run(() => PipeServerThread(connection), tokenSource.Token);
+                connectionTasks.Add(connection, task);
             }
         }
 
         public void Stop()
         {
-            foreach (var connection in connectionThreads.Keys)
-                Send(connection, new Notification() {Text = "The server has shut down."});
+            var notificationTasks = connectionTasks.Keys.Select(
+                    connection => Send(connection, new Notification() {Text = "The server has shut down."}));
+            Task.WaitAll(notificationTasks.ToArray());
 
-            foreach (var thread in connectionThreads.Values)
-                thread.Abort();
+            tokenSource.Cancel();
         }
 
         public void Broadcast(Message message)
         {
-            Task.WaitAll(connectionThreads.Keys.Select(connection => Send(connection, message)).ToArray());
+            Task.WaitAll(connectionTasks.Keys.Select(connection => Send(connection, message)).ToArray());
         }
 
         public void Send(string userId, Message message)
@@ -62,6 +64,12 @@ namespace SynchronousServer
             var connections = userIdMappings.Where(kvp => kvp.Value == userId).Select(kvp => kvp.Key);
             foreach (var connection in connections)
                 Send(connection, message);
+        }
+
+        public void Send(string userId, IEnumerable<Message> messages)
+        {
+            foreach (var message in messages)
+                Send(userId, message);
         }
 
         private Task Send(NamedPipeServerStream connection, object data)
@@ -80,15 +88,11 @@ namespace SynchronousServer
             });
         }
 
-        private void PipeServerThread(object state)
+        private async Task PipeServerThread(NamedPipeServerStream pipeServer)
         {
-            var pipeServer = state as NamedPipeServerStream;
-            if (pipeServer == null)
-                throw new ArgumentException();
-
             try
             {
-                while (true)
+                while (!tokenSource.Token.IsCancellationRequested)
                 {
                     try
                     {
@@ -97,7 +101,11 @@ namespace SynchronousServer
 
                         while (pipeServer.IsConnected)
                         {
-                            var receivedObject = new BinaryFormatter().Deserialize(pipeServer);
+                            var data = new byte[1024];
+                            var readBytes = await pipeServer.ReadAsync(data, 0, data.Length, tokenSource.Token);
+
+                            var stream = new MemoryStream(data.Take(readBytes).ToArray());
+                            var receivedObject = new BinaryFormatter().Deserialize(stream);
                             HandleReceivedObject(pipeServer, receivedObject);
                         }
 
@@ -105,15 +113,17 @@ namespace SynchronousServer
                     }
                     catch (IOException)
                     {
+                        if (pipeServer.IsConnected)
+                            pipeServer.Disconnect();
+
                         OnDisconnect(pipeServer);
-                        continue;
                     }
                     catch (SerializationException)
                     {
-                        if (!pipeServer.IsConnected)
-                            OnDisconnect(pipeServer);
+                        if (pipeServer.IsConnected)
+                            pipeServer.Disconnect();
 
-                        continue;
+                        OnDisconnect(pipeServer);
                     }
                 }
             }
@@ -150,8 +160,7 @@ namespace SynchronousServer
 
         public void Dispose()
         {
-            foreach (var thread in connectionThreads.Values)
-                thread.Abort();
+            tokenSource.Cancel();
         }
     }
 }

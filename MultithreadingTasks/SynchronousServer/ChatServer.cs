@@ -13,7 +13,7 @@ namespace SynchronousServer
     {
         private static readonly int MessageHistorySize = 10;
 
-        private IConnector[] connectors;
+        private IServerConnector[] connectors;
         private BlockingCollection<Message> pendingMessages;
         private ConcurrentQueue<Message> messageHistory;
 
@@ -24,7 +24,7 @@ namespace SynchronousServer
 
         public ChatServer(Action<string> log)
         {
-            connectors = new IConnector[] {new NamedPipeConnector("serverPipe")};
+            connectors = new IServerConnector[] { new NamedPipeServerConnector("serverPipe"), new SocketServerConnector() };
             Log = log;
         }
 
@@ -67,10 +67,7 @@ namespace SynchronousServer
                 messages = messageHistory.ToArray();
             }
 
-            foreach (var message in messages)
-            {
-                ((IConnector)sender).Send(e.UserId, message);
-            }
+            ((IServerConnector)sender).Send(e.UserId, messages);
         }
 
         private void OnMessageReceived(object sender, MessageReceivedEventArgs e)

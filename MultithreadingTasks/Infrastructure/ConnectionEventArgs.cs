@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SynchronousServer
+namespace Infrastructure
 {
     public class ConnectionEventArgs : EventArgs
     {
