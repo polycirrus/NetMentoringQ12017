@@ -87,7 +87,7 @@ namespace SynchronousServer
                 connection.Close();
 
                 string userId;
-                if (clients.TryGetValue(connection, out userId))
+                if (clients.TryRemove(connection, out userId))
                     Disconnected?.Invoke(this, new ConnectionEventArgs() { UserId = userId });
             }
         }
