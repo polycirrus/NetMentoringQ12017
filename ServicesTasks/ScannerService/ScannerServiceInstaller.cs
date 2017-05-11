@@ -18,8 +18,8 @@ namespace ScannerService
 
             var serviceProcessInstaller = new ServiceProcessInstaller();
             serviceProcessInstaller.Account = ServiceAccount.User;
-            serviceProcessInstaller.Username = "MINSK\\Aliaksandr_Zhytnitsk";
-            serviceProcessInstaller.Password = "44sFTHP3gQ;";
+            serviceProcessInstaller.Username = "";
+            serviceProcessInstaller.Password = "";
 
             Installers.Add(serviceInstaller);
             Installers.Add(serviceProcessInstaller);

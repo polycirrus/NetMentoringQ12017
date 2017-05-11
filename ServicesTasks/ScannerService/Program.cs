@@ -17,8 +17,7 @@ namespace ScannerService
         [STAThread()]
         static void Main(string[] args)
         {
-            //ServiceBase.Run(new ScannerService());
-            ScannerService.CombineFiles();
+            ServiceBase.Run(new ScannerService());
         }
     }
 }

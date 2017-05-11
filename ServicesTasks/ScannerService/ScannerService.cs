@@ -17,6 +17,7 @@ using iTextSharp.text;
 using iTextSharp.text.pdf;
 using MoreLinq;
 using Image = System.Windows.Controls.Image;
+using System.Diagnostics;
 
 namespace ScannerService
 {
@@ -28,14 +29,15 @@ namespace ScannerService
         private ManualResetEventSlim changesDetected;
         private FileSystemWatcher watcher;
         private Task workerTask;
+        private List<string> processedFiles;
 
         protected override void OnStart(string[] args)
         {
             tokenSource = new CancellationTokenSource();
-
             changesDetected = new ManualResetEventSlim(true);
+            processedFiles = new List<string>();
 
-            var watcher = new FileSystemWatcher(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
+            watcher = new FileSystemWatcher(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
             watcher.Changed += WatcherOnChanged;
             watcher.Created += WatcherOnCreated;
             watcher.Renamed += WatcherOnRenamed;
@@ -90,14 +92,24 @@ namespace ScannerService
                 tokenSource.Token.ThrowIfCancellationRequested();
                 changesDetected.Reset();
 
-                CombineFiles();
+                try
+                {
+                    CombineFiles();
+                }
+                catch (Exception e)
+                {
+                    EventLog.WriteEntry(e.ToString(), EventLogEntryType.Error);
+                }
             }
             tokenSource.Token.ThrowIfCancellationRequested();
         }
 
-        public static void CombineFiles()
+        public void CombineFiles()
         {
             var indexedFiles = GetFilesWithIndexes();
+            if (!indexedFiles.Any())
+                return;
+
             var batches = SplitFilesIntoBatches(indexedFiles);
 
             foreach (var batch in batches)
@@ -130,7 +142,7 @@ namespace ScannerService
             return batches;
         }
 
-        private static Tuple<int, FileInfo>[] GetFilesWithIndexes()
+        private Tuple<int, FileInfo>[] GetFilesWithIndexes()
         {
             var directory = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
             var files = directory.GetFiles();
@@ -138,7 +150,7 @@ namespace ScannerService
 
             return files
                 .Select(file => new Tuple<Match, FileInfo>(regex.Match(file.Name), file))
-                .Where(tuple => tuple.Item1.Success)
+                .Where(tuple => tuple.Item1.Success && !processedFiles.Contains(tuple.Item2.FullName))
                 .Select(tuple => new Tuple<int, FileInfo>(Convert.ToInt32(tuple.Item1.Groups[1].Value), tuple.Item2))
                 .OrderBy(x => x.Item1)
                 .ToArray();
@@ -146,19 +158,20 @@ namespace ScannerService
 
         private static string CreateFileNameForBatch(IEnumerable<Tuple<int, FileInfo>> batch)
         {
-            var fileName = $"{batch.First().Item1}-{batch.Last().Item1}.pdf";
+            var directory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var fileName = Path.Combine(directory, $"{batch.First().Item1}-{batch.Last().Item1}.pdf");
             if (File.Exists(fileName))
             {
                 int count = 1;
                 do
                 {
-                    fileName = $"{batch.First().Item1}-{batch.Last().Item1}_({count++}).pdf";
+                    fileName = Path.Combine(directory, $"{batch.First().Item1}-{batch.Last().Item1}_({count++}).pdf");
                 } while (File.Exists(fileName));
             }
             return fileName;
         }
 
-        private static void CreateDocument(string documentPath, IEnumerable<string> imagePaths)
+        private void CreateDocument(string documentPath, IEnumerable<string> imagePaths)
         {
             var bitmaps = GetBitmaps(imagePaths);
             if (bitmaps.Count < 1)
@@ -167,7 +180,7 @@ namespace ScannerService
             //WriteBitmapsToXps(documentPath, bitmaps);
             WriteBitmapsToPdf(documentPath, bitmaps);
 
-            //FileHelper.Delete(imagePaths);
+            processedFiles.AddRange(imagePaths);
         }
 
         private static void WriteBitmapsToPdf(string documentPath, List<BitmapImage> bitmaps)
@@ -188,14 +201,8 @@ namespace ScannerService
                             writer.DirectContent.AddImage(image);
                             document.NewPage();
                         }
-                        //foreach (var bitmapImage in bitmaps)
-                        //{
-                        //    var image = iTextSharp.text.Image.GetInstance(bitmapImage.UriSource);
-                        //    image.SetAbsolutePosition(0, 0);
-                        //    writer.DirectContent.AddImage(image);
-                        //    document.NewPage();
-                        //}
 
+                        writer.Flush();
                         document.Close();
                     }
                 }
