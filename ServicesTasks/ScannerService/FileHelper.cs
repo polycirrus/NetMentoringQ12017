@@ -8,7 +8,7 @@ namespace ScannerService
     public static class FileHelper
     {
         private static readonly int RetryAttempts = 3;
-        private static readonly int SleepInterval = 100;
+        private static readonly int SleepInterval = 1000;
 
         public static void Delete(string path)
         {
