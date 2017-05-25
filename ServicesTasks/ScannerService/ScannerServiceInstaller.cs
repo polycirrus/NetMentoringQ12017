@@ -13,13 +13,13 @@ namespace ScannerService
             serviceInstaller.ServiceName = "ScannerService";
             serviceInstaller.DisplayName = "Scanner Service";
             serviceInstaller.DelayedAutoStart = false;
-            serviceInstaller.Description = "Monitors the My Pictures folder for images from a scanner and composes them into XPS documents.";
+            serviceInstaller.Description = "Monitors the My Pictures folder for images from a scanner and composes them into documents.";
             serviceInstaller.StartType = ServiceStartMode.Manual;
 
             var serviceProcessInstaller = new ServiceProcessInstaller();
-            serviceProcessInstaller.Account = ServiceAccount.User;
-            serviceProcessInstaller.Username = "MINSK\\Aliaksandr_Zhytnitsk";
-            serviceProcessInstaller.Password = "44sFTHP3gQ;";
+            serviceProcessInstaller.Account = ServiceAccount.NetworkService;
+            //serviceProcessInstaller.Username = "MINSK\\Aliaksandr_Zhytnitsk";
+            //serviceProcessInstaller.Password = "";
 
             Installers.Add(serviceInstaller);
             Installers.Add(serviceProcessInstaller);
