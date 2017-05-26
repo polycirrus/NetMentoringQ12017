@@ -18,35 +18,100 @@ using iTextSharp.text.pdf;
 using MoreLinq;
 using Image = System.Windows.Controls.Image;
 using System.Diagnostics;
+using System.Messaging;
+using Shared;
+using Timer = System.Timers.Timer;
 
 namespace ScannerService
 {
     class ScannerService : ServiceBase
     {
-        private static readonly TimeSpan ScanTimeout = TimeSpan.FromMinutes(2);
+        private static readonly TimeSpan DefaultScanTimeout = TimeSpan.FromMinutes(2);
+        private static readonly double StateUpdateTimerInterval = 60000;
+        private static readonly string MasterQueueName = @".\Private$\MasterServiceQueue";
+        private static readonly TimeSpan ReceiveTimeout = TimeSpan.FromSeconds(1);
+        private static readonly int DocumentChunkSize = 1048000;
 
-        private CancellationTokenSource tokenSource;
         private ManualResetEventSlim changesDetected;
-        private FileSystemWatcher watcher;
+        private CancellationTokenSource tokenSource;
         private Task workerTask;
+        private FileSystemWatcher watcher;
+
+        private TimeSpan scanTimeout;
         private List<string> processedFiles;
+        private ScannerStatus status = ScannerStatus.Busy;
+
+        private string serviceName;
+        private MessageQueue masterServiceQueue;
+        private object masterQueueLock;
+        private MessageQueue queue;
+        private Task listenerTask;
+        private Timer stateUpdateTimer;
 
         protected override void OnStart(string[] args)
         {
-            tokenSource = new CancellationTokenSource();
-            changesDetected = new ManualResetEventSlim(true);
-            processedFiles = new List<string>();
+            Thread.Sleep(20000);
+            Log("Initializing service...");
 
+            try
+            {
+                InitializeWorker();
+                InitializeWatcher();
+                InitializeMessaging();
+            }
+            catch (Exception exception)
+            {
+                Log($"An exception has occured during initialization: {exception}");
+                throw;
+            }
+
+            Log("Initialization complete.");
+            base.OnStart(args);
+        }
+
+        #region Init
+
+        private void InitializeMessaging()
+        {
+            serviceName = $"ScannerQueue{Guid.NewGuid().ToString("N")}";
+            Log($"Service name is {serviceName}");
+
+            var queueName = $".\\Private$\\{serviceName}";
+            if (MessageQueue.Exists(queueName))
+                queue = new MessageQueue($".\\Private$\\{serviceName}");
+            else
+                queue = MessageQueue.Create(queueName);
+
+            masterServiceQueue = new MessageQueue(MasterQueueName);
+            masterServiceQueue.DefaultPropertiesToSend.ResponseQueue = queue;
+
+            masterQueueLock = new object();
+
+            listenerTask = Task.Run(new Action(ListenerRoutine), tokenSource.Token);
+
+            stateUpdateTimer = new Timer(StateUpdateTimerInterval);
+            stateUpdateTimer.Elapsed += (sender, eventArgs) => SendStatusUpdate();
+            stateUpdateTimer.AutoReset = true;
+            stateUpdateTimer.Start();
+        }
+
+        private void InitializeWatcher()
+        {
             watcher = new FileSystemWatcher(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
             watcher.Changed += WatcherOnChanged;
             watcher.Created += WatcherOnCreated;
             watcher.Renamed += WatcherOnRenamed;
 
-            workerTask = Task.Run(() => WorkerRoutine(), tokenSource.Token);
-
             watcher.EnableRaisingEvents = true;
+        }
 
-            base.OnStart(args);
+        private void InitializeWorker()
+        {
+            changesDetected = new ManualResetEventSlim(true);
+            processedFiles = new List<string>();
+            scanTimeout = DefaultScanTimeout;
+            tokenSource = new CancellationTokenSource();
+            workerTask = Task.Run(() => WorkerRoutine(), tokenSource.Token);
         }
 
         private void WatcherOnCreated(object sender, FileSystemEventArgs fileSystemEventArgs)
@@ -64,31 +129,45 @@ namespace ScannerService
             changesDetected.Set();
         }
 
+        #endregion
+
         protected override void OnStop()
         {
+            Log("Stopping service...");
+
             try
             {
-                tokenSource.Cancel();
-                if (!workerTask.IsCompleted)
-                    workerTask.Wait();
+                stateUpdateTimer.Stop();
+                watcher.EnableRaisingEvents = false;
 
+                tokenSource.Cancel();
+                Task.WaitAll(new[] {workerTask, listenerTask}.Where(task => !task.IsCompleted).ToArray());
+
+                Log("Service stopped.");
                 base.OnStop();
             }
             finally
             {
                 changesDetected.Dispose();
-
-                watcher.EnableRaisingEvents = false;
                 watcher.Dispose();
+                stateUpdateTimer.Dispose();
+                queue.Dispose();
+                masterServiceQueue.Dispose();
             }
         }
+
+        #region Scanned files processing
 
         private void WorkerRoutine()
         {
             Thread.Sleep(20000);
             while (!tokenSource.IsCancellationRequested)
             {
-                changesDetected.Wait(ScanTimeout, tokenSource.Token);
+                Log("Waiting for files...");
+                status = ScannerStatus.Idle;
+                changesDetected.Wait(scanTimeout, tokenSource.Token);
+                status = ScannerStatus.Busy;
+
                 tokenSource.Token.ThrowIfCancellationRequested();
                 changesDetected.Reset();
 
@@ -98,7 +177,8 @@ namespace ScannerService
                 }
                 catch (Exception e)
                 {
-                    EventLog.WriteEntry(e.ToString(), EventLogEntryType.Error);
+                    //EventLog.WriteEntry(e.ToString(), EventLogEntryType.Error);
+                    Log($"An exception has occured during file processing: {e}");
                 }
             }
             tokenSource.Token.ThrowIfCancellationRequested();
@@ -108,18 +188,25 @@ namespace ScannerService
         {
             var indexedFiles = GetFilesWithIndexes();
             if (!indexedFiles.Any())
+            {
+                Log("No files to combine were found.");
                 return;
+            }
+            Log($"Combining files: {string.Join(", ", indexedFiles.Select(tuple => tuple.Item2.Name))}");
 
             var batches = SplitFilesIntoBatches(indexedFiles);
 
             foreach (var batch in batches)
             {
                 var fileName = CreateFileNameForBatch(batch);
+                Log($"Combining files {string.Join(", ", batch.Select(tuple => tuple.Item2.Name))} into {fileName}");
                 CreateDocument(fileName, batch.Select(x => x.Item2.FullName).ToList());
+                Log($"Document {fileName} created");
+                SendFile(fileName);
             }
         }
 
-        private static List<IEnumerable<Tuple<int, FileInfo>>> SplitFilesIntoBatches(Tuple<int, FileInfo>[] indexedFiles)
+        private List<IEnumerable<Tuple<int, FileInfo>>> SplitFilesIntoBatches(Tuple<int, FileInfo>[] indexedFiles)
         {
             var batches = new List<IEnumerable<Tuple<int, FileInfo>>>();
 
@@ -136,7 +223,7 @@ namespace ScannerService
                 }
             }
 
-            if (DateTime.Now - indexedFiles.Last().Item2.LastWriteTime > ScanTimeout)
+            if (DateTime.Now - indexedFiles.Last().Item2.LastWriteTime > scanTimeout)
                 batches.Add(indexedFiles.Slice(batchStart, indexedFiles.Length - batchStart));
 
             return batches;
@@ -183,6 +270,8 @@ namespace ScannerService
             processedFiles.AddRange(imagePaths);
         }
 
+        #region Pdf
+
         private static void WriteBitmapsToPdf(string documentPath, List<BitmapImage> bitmaps)
         {
             var images = bitmaps.Select(bitmapImage => iTextSharp.text.Image.GetInstance(bitmapImage.UriSource));
@@ -226,6 +315,10 @@ namespace ScannerService
             return bitmaps;
         }
 
+        #endregion
+
+        #region Xps
+
         private static void WriteBitmapsToXps(string filePath, List<BitmapImage> bitmaps)
         {
             var pageWidth = bitmaps.Max(bitmap => bitmap.Width);
@@ -262,6 +355,148 @@ namespace ScannerService
             });
 
             return image;
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Messaging
+
+        private void ListenerRoutine()
+        {
+            Thread.Sleep(20000);
+
+            queue.Formatter = new XmlMessageFormatter(new[] { typeof(RequestStateUpdateCommand), typeof(UpdateConfigurationCommand) });
+
+            using (queue)
+            {
+                while (!tokenSource.IsCancellationRequested)
+                {
+                    Message message;
+                    try
+                    {
+                        message = queue.Receive(ReceiveTimeout);
+                    }
+                    catch (MessageQueueException exception)
+                    {
+                        if (exception.MessageQueueErrorCode == MessageQueueErrorCode.IOTimeout)
+                            continue;
+
+                        Log(exception.ToString());
+                        throw;
+                    }
+
+                    try
+                    {
+                        HandleMessage(message);
+                    }
+                    catch (Exception exception)
+                    {
+                        Log($"An exception has occured during message handling: {exception}");
+                        continue;
+                    }
+                }
+            }
+
+        }
+
+        private void HandleMessage(Message message)
+        {
+            Log($"Recieved '{message}'");
+
+            var messageBody = message.Body;
+            var requestStateUpdateCommand = messageBody as RequestStateUpdateCommand;
+            if (requestStateUpdateCommand != null)
+            {
+                SendStatusUpdate();
+                return;
+            }
+
+            var updateConfigurationCommand = messageBody as UpdateConfigurationCommand;
+            if (updateConfigurationCommand != null)
+            {
+                UpdateConfiguration(updateConfigurationCommand.Configuration);
+            }
+
+        }
+
+        private void UpdateConfiguration(ScannerConfiguration configuration)
+        {
+            scanTimeout = configuration.ScanTimeout;
+            Log($"Updated scan timeout to '{configuration.ScanTimeout}.'");
+        }
+
+        private void SendStatusUpdate()
+        {
+            Log("Sending status update to the master service.");
+            Send(new ScannerState()
+            {
+                Configuration = new ScannerConfiguration() { ScanTimeout = scanTimeout },
+                Status = status
+            });
+        }
+
+        private void SendFile(string filePath)
+        {
+            var fileName = Path.GetFileName(filePath);
+            Log($"Sending file '{fileName}' to the master service...");
+
+            var fileStream = new FileStream(filePath, FileMode.Open);
+            var chunkCount = fileStream.Length / DocumentChunkSize;
+            if (chunkCount * DocumentChunkSize < fileStream.Length)
+                chunkCount++;
+
+            var chunkNumber = 0;
+            var chunk = new DocumentChunk()
+            {
+                ChunkNumber = chunkNumber,
+                Data = new byte[DocumentChunkSize],
+                FileName = fileName,
+                TotalChunks = (int)chunkCount
+            };
+            var bytesRead = 0;
+            while ((bytesRead = fileStream.Read(chunk.Data, 0, DocumentChunkSize)) > 0)
+            {
+                if (bytesRead < DocumentChunkSize)
+                    chunk.Data = chunk.Data.Take(bytesRead).ToArray();
+
+                Log($"Sending file '{fileName}' chunk #{chunkNumber}...");
+                Send(chunk);
+                Log($"Chunk #{chunkNumber} sent.");
+
+                chunkNumber++;
+                if (bytesRead < DocumentChunkSize || chunkNumber >= chunkCount)
+                    break;
+
+                chunk = new DocumentChunk()
+                {
+                    ChunkNumber = chunkNumber,
+                    Data = new byte[DocumentChunkSize],
+                    FileName = fileName,
+                    TotalChunks = (int)chunkCount
+                };
+            }
+
+            Log($"File '{fileName}' sent to the master service.");
+        }
+
+        private void Send(object message)
+        {
+            lock (masterQueueLock)
+            {
+                masterServiceQueue.Send(message);
+            }
+        }
+
+        #endregion
+
+        private void Log(string entry)
+        {
+            using (var writer = new StreamWriter(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "log.txt"), true))
+            {
+                writer.WriteLine($"{DateTime.Now}: {entry}{Environment.NewLine}");
+            }
         }
     }
 }

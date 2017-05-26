@@ -10,7 +10,7 @@ namespace Tests
         private static readonly string QueueName = @".\Private$\TestQueue";
 
         [TestMethod]
-        public void BeginRecieveTests()
+        public void RecieveTests()
         {
             MessageQueue queue;
             if (MessageQueue.Exists(QueueName))
@@ -22,8 +22,8 @@ namespace Tests
 
             using (queue)
             {
-                var result = queue.BeginReceive(TimeSpan.FromSeconds(10), null,
-                    asyncResult => Console.WriteLine("the unthinkable has happened"));
+                var message = queue.Receive(TimeSpan.FromSeconds(5));
+                Console.WriteLine((string)message?.Body ?? "No message recieved.");
             }
         }
     }
