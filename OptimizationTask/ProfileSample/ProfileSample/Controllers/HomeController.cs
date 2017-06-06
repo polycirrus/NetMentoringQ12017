@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,17 +13,23 @@ namespace ProfileSample.Controllers
 {
     public class HomeController : Controller
     {
-        public ActionResult Index()
+        public async Task<ActionResult> Index()
         {
             var context = new ProfileSampleEntities();
 
-            var rawImages = context.ImgSources.Take(20).Select(source => new ImageModel() { Name = source.Name, Data = source.Data }).ToList();
+            var imageIds = await context.ImgSources.Take(20).Select(source => source.Id).ToListAsync();
 
-            var convertedImages = rawImages
-                .Select(rawImage => new EncodedImageModel() { Name = rawImage.Name, Data = System.Convert.ToBase64String(rawImage.Data) })
-                .AsParallel().ToList();
+            return View(imageIds);
+        }
 
-            return View(convertedImages);
+        public async Task<ActionResult> GetImage(int id)
+        {
+            var context = new ProfileSampleEntities();
+
+            var image = await context.ImgSources.FindAsync(id);
+            if (image == null)
+                return HttpNotFound();
+            return File(image.Data, "image/jpg");
         }
 
         public ActionResult Convert()
