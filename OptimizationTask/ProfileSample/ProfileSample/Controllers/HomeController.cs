@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using ProfileSample.DAL;
@@ -15,24 +16,13 @@ namespace ProfileSample.Controllers
         {
             var context = new ProfileSampleEntities();
 
-            var sources = context.ImgSources.Take(20).Select(x => x.Id);
-            
-            var model = new List<ImageModel>();
+            var rawImages = context.ImgSources.Take(20).Select(source => new ImageModel() { Name = source.Name, Data = source.Data }).ToList();
 
-            foreach (var id in sources)
-            {
-                var item = context.ImgSources.Find(id);
+            var convertedImages = rawImages
+                .Select(rawImage => new EncodedImageModel() { Name = rawImage.Name, Data = System.Convert.ToBase64String(rawImage.Data) })
+                .AsParallel().ToList();
 
-                var obj = new ImageModel()
-                {
-                    Name = item.Name,
-                    Data = item.Data
-                };
-
-                model.Add(obj);
-            } 
-
-            return View(model);
+            return View(convertedImages);
         }
 
         public ActionResult Convert()
