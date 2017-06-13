@@ -12,10 +12,18 @@ namespace ProfileSample.DAL
     using System;
     using System.Collections.Generic;
     
+    [Serializable]
     public partial class ImgSource
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public byte[] Data { get; set; }
+
+        [NonSerialized]
+        private byte[] data;
+        public byte[] Data
+        {
+            get { return data; }
+            set { data = value; }
+        }
     }
 }

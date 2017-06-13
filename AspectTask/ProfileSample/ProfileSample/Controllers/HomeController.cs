@@ -21,16 +21,14 @@ namespace ProfileSample.Controllers
             this.imageManager = imageManager;
         }
 
-        [PostSharpLoggingAspect]
-        public async Task<ActionResult> Index()
+        public ActionResult Index()
         {
-            var imageIds = await imageManager.GetIds();
+            var imageIds = imageManager.GetIds();
 
             return View(imageIds);
         }
 
-        [PostSharpLoggingAspect]
-        public async Task<ActionResult> GetImage(int id)
+        public ActionResult GetImage(int id)
         {
             HttpContext.Response.Cache.SetCacheability(HttpCacheability.Public);
             HttpContext.Response.Cache.SetMaxAge(new TimeSpan(1, 0, 0));
@@ -41,7 +39,7 @@ namespace ProfileSample.Controllers
                 // Set Last Modified time
                 HttpContext.Response.Cache.SetLastModified(DateTime.Now.AddYears(-1));
 
-                var image = await imageManager.GetImage(id);
+                var image = imageManager.GetImage(id);
                 if (image == null)
                     return HttpNotFound();
                 return File(image.Data, "image/jpg");

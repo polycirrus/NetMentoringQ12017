@@ -9,7 +9,7 @@ namespace ProfileSample.Business
 {
     public interface IImageManager
     {
-        Task<IEnumerable<int>> GetIds();
-        Task<ImgSource> GetImage(int id);
+        IEnumerable<int> GetIds();
+        ImgSource GetImage(int id);
     }
 }

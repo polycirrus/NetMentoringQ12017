@@ -173,7 +173,7 @@
     <Compile Include="App_Start\UnityConfig.cs" />
     <Compile Include="Business\IImageManager.cs" />
     <Compile Include="Business\ImageManager.cs" />
-    <Compile Include="Business\LoggingAdvice.cs" />
+    <Compile Include="Business\LoggingInterceptor.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="DAL\ImgSource.cs">
       <DependentUpon>MyImgContext.tt</DependentUpon>

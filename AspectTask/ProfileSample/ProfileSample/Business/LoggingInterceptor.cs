@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Web;
+using System.Xml;
+using System.Xml.Serialization;
 using Microsoft.Practices.Unity.InterceptionExtension;
+using Newtonsoft.Json;
 using PostSharp.Aspects;
 using PostSharp.Aspects.Advices;
 
 namespace ProfileSample.Business
 {
-    public class LoggingAdvice : IInterceptionBehavior
+    public class LoggingInterceptor : IInterceptionBehavior
     {
         public IMethodReturn Invoke(IMethodInvocation input, GetNextInterceptionBehaviorDelegate getNext)
         {
@@ -17,6 +21,7 @@ namespace ProfileSample.Business
             Log(message);
 
             var result = getNext()(input, getNext);
+
             message = $"{DateTime.Now} {input.MethodBase} returned {result.ReturnValue}";
             Log(message);
 
@@ -32,7 +37,7 @@ namespace ProfileSample.Business
 
         private void Log(string message)
         {
-            Debug.WriteLine(message);
+            Trace.TraceInformation(message);
         }
 
         private Dictionary<string, object> GetArguments(IParameterCollection parameterCollection)
@@ -46,11 +51,46 @@ namespace ProfileSample.Business
         }
     }
 
-    public class PostSharpLoggingAspect : OnMethodBoundaryAspect
+    [Serializable]
+    public class LoggingAspect : OnMethodBoundaryAspect
     {
         public override void OnEntry(MethodExecutionArgs args)
         {
-            Debug.WriteLine($"Invoked {args.Method.Name}");
+            var message = $"{DateTime.Now} Invoked {args.Method} with arguments {string.Join(", ", GetArguments(args).Select(kvp => $"{kvp.Key} = {kvp.Value}"))}";
+            Log(message);
+        }
+
+        public override void OnSuccess(MethodExecutionArgs args)
+        {
+            var message = $"{DateTime.Now} {args.Method} returned {args.ReturnValue}";
+            Log(message);
+        }
+
+        private void Log(string message)
+        {
+            Trace.TraceInformation(message);
+        }
+
+        private Dictionary<string, object> GetArguments(MethodExecutionArgs args)
+        {
+            var result = new Dictionary<string, object>();
+
+            var parameters = args.Method.GetParameters();
+            
+            for (int i = 0; i < args.Arguments.Count; i++)
+                result.Add(parameters[i].Name, Serialize(args.Arguments[i]));
+
+            return result;
+        }
+
+        private string Serialize(object o)
+        {
+            var serializer = new XmlSerializer(o.GetType());
+            using (var writer = new StringWriter())
+            {
+                serializer.Serialize(writer, o);
+                return writer.ToString();
+            }
         }
     }
 }

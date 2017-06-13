@@ -18,8 +18,8 @@ namespace ProfileSample
             // e.g. container.RegisterType<ITestService, TestService>();
             container.AddNewExtension<Interception>();
             container.RegisterType<IImageManager, ImageManager>(
-                //new Interceptor<InterfaceInterceptor>(), 
-                //new InterceptionBehavior<LoggingAdvice>()
+                new Interceptor<InterfaceInterceptor>(),
+                new InterceptionBehavior<LoggingInterceptor>()
             );
 
             DependencyResolver.SetResolver(new UnityDependencyResolver(container));
