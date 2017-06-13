@@ -1,0 +1,14 @@
+﻿@using System.Web.UI.WebControls
+@model IEnumerable<int>
+
+@{
+    ViewBag.Title = "title";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row">
+    @foreach (var id in Model)
+    {
+        <img src="@Url.Action("GetImage", new {id})" width="300" height="150"/>
+    }
+</div>
