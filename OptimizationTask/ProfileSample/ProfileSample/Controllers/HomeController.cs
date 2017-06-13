@@ -26,10 +26,22 @@ namespace ProfileSample.Controllers
         {
             var context = new ProfileSampleEntities();
 
-            var image = await context.ImgSources.FindAsync(id);
-            if (image == null)
-                return HttpNotFound();
-            return File(image.Data, "image/jpg");
+            HttpContext.Response.Cache.SetCacheability(HttpCacheability.Public);
+            HttpContext.Response.Cache.SetMaxAge(new TimeSpan(1, 0, 0));
+
+            string rawIfModifiedSince = HttpContext.Request.Headers.Get("If-Modified-Since");
+            if (string.IsNullOrEmpty(rawIfModifiedSince))
+            {
+                // Set Last Modified time
+                HttpContext.Response.Cache.SetLastModified(DateTime.Now.AddYears(-1));
+
+                var image = await context.ImgSources.FindAsync(id);
+                if (image == null)
+                    return HttpNotFound();
+                return File(image.Data, "image/jpg");
+            }
+
+            return new HttpStatusCodeResult(304, "Not Modified");
         }
 
         public ActionResult Convert()
